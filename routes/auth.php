@@ -28,6 +28,9 @@ Route::group(['middleware' => 'guest'], function () {
     // is created).
     Route::post('/password/reset', 'ResetPasswordController')->name('auth.reset-password');
 
+    // OAuth endpoint
+    Route::get('/oauth', 'OAuthController@redirect')->name('oauth.redirect');
+
     // Catch any other combinations of routes and pass them off to the Vuejs component.
     Route::fallback('LoginController@index');
 });
@@ -41,3 +44,6 @@ Route::group(['middleware' => 'guest'], function () {
 |
 */
 Route::get('/logout', 'LoginController@logout')->name('auth.logout')->middleware('auth');
+
+// OAuth callback route accessible when logged in and when logged out
+Route::get('/oauth/callback', 'OAuthController@callback')->name('oauth.callback');
