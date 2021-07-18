@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Form, Formik, FormikHelpers } from 'formik';
 import { object, string } from 'yup';
-import getTwoFactorTokenUrl from '@/api/account/getTwoFactorTokenUrl';
+import getTwoFactorTokenData, { TwoFactorTokenData } from '@/api/account/getTwoFactorTokenData';
 import enableAccountTwoFactor from '@/api/account/enableAccountTwoFactor';
 import { Actions, useStoreActions } from 'easy-peasy';
 import { ApplicationStore } from '@/state';
@@ -12,13 +12,14 @@ import Button from '@/components/elements/Button';
 import asModal from '@/hoc/asModal';
 import ModalContext from '@/context/ModalContext';
 import QRCode from 'qrcode.react';
+import CopyOnClick from '@/components/elements/CopyOnClick';
 
 interface Values {
     code: string;
 }
 
 const SetupTwoFactorModal = () => {
-    const [ token, setToken ] = useState('');
+    const [ token, setToken ] = useState<TwoFactorTokenData | null>(null);
     const [ recoveryTokens, setRecoveryTokens ] = useState<string[]>([]);
 
     const { dismiss, setPropOverrides } = useContext(ModalContext);
@@ -26,7 +27,7 @@ const SetupTwoFactorModal = () => {
     const { clearAndAddHttpError } = useStoreActions((actions: Actions<ApplicationStore>) => actions.flashes);
 
     useEffect(() => {
-        getTwoFactorTokenUrl()
+        getTwoFactorTokenData()
             .then(setToken)
             .catch(error => {
                 console.error(error);
@@ -102,14 +103,20 @@ const SetupTwoFactorModal = () => {
                     <div css={tw`flex flex-wrap`}>
                         <div css={tw`w-full md:flex-1`}>
                             <div css={tw`w-32 h-32 md:w-64 md:h-64 bg-neutral-600 p-2 rounded mx-auto`}>
-                                {!token || !token.length ?
+                                {!token ? (
                                     <img
-                                        src={'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='}
+                                        src={
+                                            'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+                                        }
                                         css={tw`w-64 h-64 rounded`}
                                     />
-                                    :
-                                    <QRCode renderAs={'svg'} value={token} css={tw`w-full h-full shadow-none rounded-none`}/>
-                                }
+                                ) : (
+                                    <QRCode
+                                        renderAs={'svg'}
+                                        value={token.image_url_data}
+                                        css={tw`w-full h-full shadow-none rounded-none`}
+                                    />
+                                )}
                             </div>
                         </div>
                         <div css={tw`w-full mt-6 md:mt-0 md:flex-1 md:flex md:flex-col`}>
@@ -121,11 +128,21 @@ const SetupTwoFactorModal = () => {
                                     title={'Code From Authenticator'}
                                     description={'Enter the code from your authenticator device after scanning the QR image.'}
                                 />
+                                {token &&
+                                    <div css={tw`pt-4 text-neutral-400`}>
+                                        Alternatively, you can also enter this token:
+                                        <CopyOnClick text={token.secret}>
+                                            <div css={tw`text-sm bg-neutral-900 rounded mt-2 py-2 px-4 font-mono`}>
+                                                <code css={tw`font-mono`}>
+                                                    {token.secret}
+                                                </code>
+                                            </div>
+                                        </CopyOnClick>
+                                    </div>
+                                }
                             </div>
                             <div css={tw`mt-6 md:mt-0 text-right`}>
-                                <Button>
-                                    Setup
-                                </Button>
+                                <Button>Setup</Button>
                             </div>
                         </div>
                     </div>
